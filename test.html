@@ -8,80 +8,92 @@
 	
 	<body>
 		<canvas id='world' width='500' height='500'></canvas>
-		<script type='text/javascript' src='MooTools.js'></script>
+		<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js'></script>
 		<script type='text/javascript' src='Physics.js'></script>
 		<script type='text/javascript'>
-			var canvas = $('world'),
-				display = canvas.getContext('2d'),
-				world = new Physics.World({
+			var $canvas = $('#world'),
+				display = $canvas[0].getContext('2d'),
+				world = new physics.World({
 					width: 125,
 					height: 125,
-					fps: 24
+					fps: 60
 				}),
 				drawing = false;
 				
+				world.start();
+
 				// Draw display on step
-				world.addEvent('step', function(particles) {
+				world.on('step', function(particles) {
+					var i, len, particle
+
 					// Every tick clear the screen
 					display.fillStyle = '#000000';
 					display.fillRect(0, 0, 500, 500);
 					display.fillStyle = '#CCCCCC';
 					
 					// Loop over particles
-					particles.each(function(particle) {
+					for(i = 0, len = particles.length; i < len; i++){
+						particle = particles[i];
+
 						// Draw the particle
 						display.fillRect(particle.options.position.x * 4, particle.options.position.y * 4, 4, 4);
-					});
+					}
 				});
 				
 				// Allow world nudging
-				document.addEvent('keydown', function(e) {
-					var f = 50,
-						axis = null,
-						force = null;
+				$(document).bind('keydown', function(e) {
+					var f = 50
+						,axis = null
+						,force = null
+						,i
+						,len
+						,particle;
 					
-					switch(e.key) {
-						case 'up':
+					switch(e.which) {
+						case 38:
 							axis = 'y';
 							force = -f;
 							break;
-						case 'right':
+						case 39:
 							axis = 'x';
 							force = f;
 							break;
-						case 'down':
+						case 40:
 							axis = 'y';
 							force = f;
 							break;
-						case 'left':
+						case 37:
 							axis = 'x';
 							force = -f;
 							break;
 					}
 					
 					if(axis) {
-						world.particles.each(function(particle) {
+						for(i = 0, len = world.particles.length; i < len; i++){
+							particle = world.particles[i];
 							particle.options.velocity[axis] += force;
-						});
+						}
 					}
+
+					return false;
 				});
 				
 				// Allow drawing of particles
-				canvas.addEvent('mousedown', function(e) {
+				$canvas.bind('mousedown', function(e) {
 					drawing = true;
 				});
 				
-				canvas.addEvent('mouseup', function(e) {
+				$canvas.bind('mouseup', function(e) {
 					drawing = false;
 				});
 				
-				canvas.addEvent('mousemove', function(e) {
+				$canvas.bind('mousemove', function(e) {
 					// Initialise variables
 					var x = null,
 						y = null,
 						center = {
-							x: Math.floor(e.event.offsetX / 4),
-							y: Math.floor(e.event.offsetY / 4)
+							x: Math.floor((e.pageX - this.offsetLeft) / 4),
+							y: Math.floor((e.pageY - this.offsetTop) / 4)
 						};
 					
 					// Draw new particles if drawing
@@ -89,12 +101,12 @@
 						for(x = center.x - 2; x < center.x + 2; x += 1) {
 							for(y = center.y - 2; y < center.y + 2; y += 1) {
 								if(x >= 0 && y >= 0 && x < world.options.width && y < world.options.height) {
-									world.addParticle(new Physics.Particle({
+									world.addParticle(new physics.Particle({
 										position: {
-											x: x,
-											y: y
-										},
-										locked: e.shift
+											 x: x + ((Math.random()*5)|0) * (Math.random() > 0.5 ? -1 : 1)
+											,y: y + ((Math.random()*5)|0) * (Math.random() > 0.5 ? -1 : 1)
+										}
+										,locked: e.shiftKey
 									}));
 								}
 							}
